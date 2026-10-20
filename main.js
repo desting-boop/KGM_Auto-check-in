@@ -129,7 +129,8 @@ async function main() {
             if (i != 8) {
               await delay(30 * 1000);
             }
-          } else if (ad.error_code === 30002) {
+          } else if (ad.error_code === 30002 || ad.error_code === 30000) {
+            // 30000/30002 均表示今日领取次数已用光，属正常业务结果，不算失败
             printGreen("✅ 今天次数已用光");
             break;
           } else {
