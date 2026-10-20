@@ -1,4 +1,4 @@
-import { appendFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { printBlue, printGreen, printMagenta, printRed, printYellow } from "./utils/colorOut.js";
 import { close_api, delay, send, startService, waitForApi } from "./utils/utils.js";
 import { readUserinfo, saveUserinfo, upsertUser } from "./utils/userinfo.js";
@@ -58,6 +58,14 @@ async function login() {
       // 这里需先剥掉再重新拼接，否则会出现前缀重复导致图片无法渲染。
       if (imgBase64) {
         const raw = imgBase64.startsWith("data:") ? imgBase64.split(",").pop() : imgBase64;
+        // 同时落盘为 PNG，便于 workflow 以 artifact 形式导出（方便外部取图/下载）
+        try {
+          mkdirSync("qrcode", { recursive: true });
+          writeFileSync(`qrcode/qrcode-${i + 1}.png`, Buffer.from(raw, "base64"));
+          console.log(`[qrcode] 已保存 qrcode/qrcode-${i + 1}.png`);
+        } catch (e) {
+          console.log(`[qrcode] 保存 PNG 失败: ${e.message}`);
+        }
         writeSummary([
           `## 📱 第 ${i + 1}/${NUMBER} 个账号 · 扫码登录`,
           "",

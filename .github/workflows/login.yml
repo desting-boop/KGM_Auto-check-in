@@ -70,3 +70,12 @@ jobs:
           # PAT 可选：有则自动写入 secret，没有则输出字符串供手动粘贴
           PAT: ${{ secrets.PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+
+      - name: 上传登录二维码
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: login-qrcode
+          path: qrcode/
+          if-no-files-found: ignore
+          retention-days: 1
