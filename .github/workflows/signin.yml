@@ -1,34 +1,32 @@
-name: main
+name: 签到
 on:
   workflow_dispatch:
-  # push:
   schedule:
-    - cron: '01 00 * * *'
+    # 北京时间每天 01:10（UTC 17:10）
+    # 安排在凌晨是为了抢在 APP 内手动领取当天概念版 VIP 名额之前，
+    # 避免当天名额被手动领取耗尽导致自动签到拿不到。
+    - cron: '10 17 * * *'
+
 permissions:
   contents: read
+
 jobs:
-  run:
+  signin:
     runs-on: ubuntu-latest
+    # 兜底超时：VIP 领取最多 8 轮 × 30 秒间隔，加 API 冷启动与网络重试
+    timeout-minutes: 30
     steps:
       - name: 检出仓库
         uses: actions/checkout@v6
-      - name: 创建node
+
+      - name: 安装 Node
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: 'npm'
           cache-dependency-path: ./api/package-lock.json
-      - name: 🔧 检查GitHub CLI
-        run: |
-          if ! command -v gh >/dev/null 2>&1; then
-            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-            sudo apt update
-            sudo apt install gh -y
-          fi
-          gh --version
-      - name: Cache node_modules in api directory
+
+      - name: 缓存依赖
         id: cache-npm
         uses: actions/cache@v5
         with:
@@ -36,12 +34,16 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('./api/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
+
       - name: 安装依赖
         run: cd api && npm ci --no-fund --no-audit
         if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
-      - name: 签到
-        run: npm run main
+
+      - name: 执行签到
+        run: npm run signin
         env:
+          # USERINFO 由 GitHub 在运行时注入，核心签到链路不依赖任何 PAT
           USERINFO: ${{ secrets.USERINFO }}
+          # PAT 仅用于 token 刷新时自动写回 secret，属于可选增强
           PAT: ${{ secrets.PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}

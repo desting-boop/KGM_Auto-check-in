@@ -1,0 +1,72 @@
+name: 扫码登录
+on:
+  workflow_dispatch:
+    inputs:
+      number:
+        description: '需要登录几个账号？'
+        required: true
+        default: '1'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+      append_user:
+        description: '是否追加新账号？（否 = 覆盖已有账号信息）'
+        required: true
+        default: '否'
+        type: choice
+        options:
+          - '否'
+          - '是'
+      print_userinfo:
+        description: '自动写入失败时是否在日志输出 USERINFO？（含登录 token，默认否）'
+        required: true
+        default: '否'
+        type: choice
+        options:
+          - '否'
+          - '是'
+
+permissions:
+  contents: read
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    # 二维码有效期约 2 分钟，最多等 3 个账号 × 150 秒
+    timeout-minutes: 20
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v6
+
+      - name: 安装 Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: ./api/package-lock.json
+
+      - name: 缓存依赖
+        id: cache-npm
+        uses: actions/cache@v5
+        with:
+          path: ./api/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('./api/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: 安装依赖
+        run: cd api && npm ci --no-fund --no-audit
+        if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
+
+      - name: 扫码登录
+        run: npm run login
+        env:
+          NUMBER: ${{ github.event.inputs.number }}
+          APPEND_USER: ${{ github.event.inputs.append_user }}
+          ALLOW_PRINT_USERINFO: ${{ github.event.inputs.print_userinfo }}
+          USERINFO: ${{ secrets.USERINFO }}
+          # PAT 可选：有则自动写入 secret，没有则输出字符串供手动粘贴
+          PAT: ${{ secrets.PAT }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
