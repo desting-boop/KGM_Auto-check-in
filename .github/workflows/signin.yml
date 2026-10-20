@@ -44,6 +44,7 @@ jobs:
         env:
           # USERINFO 由 GitHub 在运行时注入，核心签到链路不依赖任何 PAT
           USERINFO: ${{ secrets.USERINFO }}
-          # PAT 仅用于 token 刷新时自动写回 secret，属于可选增强
+          # PAT 为可选增强：仅用于 token 刷新时自动写回 secret。
+          # 当前仓库未配置 PAT，不影响签到——刷新后会在日志中提示手动更新 USERINFO。
           PAT: ${{ secrets.PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}

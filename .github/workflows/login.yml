@@ -67,7 +67,8 @@ jobs:
           APPEND_USER: ${{ github.event.inputs.append_user }}
           ALLOW_PRINT_USERINFO: ${{ github.event.inputs.print_userinfo }}
           USERINFO: ${{ secrets.USERINFO }}
-          # PAT 可选：有则自动写入 secret，没有则输出字符串供手动粘贴
+          # PAT 可选：有则自动写入 secret，没有则输出字符串供手动粘贴。
+          # 当前仓库未配置 PAT，登录成功后需按日志提示手动粘贴 USERINFO。
           PAT: ${{ secrets.PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
 
